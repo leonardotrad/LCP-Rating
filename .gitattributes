@@ -1,0 +1,18 @@
+# ============================================================
+# Fim de linha
+# O repositorio guarda sempre LF. Cada sistema recebe o formato
+# dele na pasta de trabalho. Isso evita que um arquivo apareca
+# como "todo alterado" so por ter sido salvo em outro sistema.
+# ============================================================
+* text=auto
+
+# ============================================================
+# Arquivos binarios - nunca converter
+# ============================================================
+*.dem binary
+*.rar binary
+*.zip binary
+*.7z  binary
+*.png binary
+*.jpg binary
+*.pdf binary
