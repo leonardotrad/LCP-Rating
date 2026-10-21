@@ -133,19 +133,28 @@ METRICAS = [
      lambda rs: (soma(rs, "kills_desvantagem") / soma(rs, "kills_modelo"), soma(rs, "kills_modelo"))
      if soma(rs, "kills_modelo") > 0 else (None, 0), False),
 
-    ("Contribuicao de utility", "Teamplay", 0.20,
+    ("Contribuicao de utility", "Teamplay", 0.15,
      lambda rs: (soma(rs, "util_thrown") / len(rs), len(rs)) if rs else (None, 0), False),
     ("Inimigos cegados por round", "Teamplay", 0.15,
      lambda rs: (soma(rs, "enemies_blinded") / len(rs), len(rs)) if rs else (None, 0), True),
     ("Utility bem-sucedida", "Teamplay", 0.15,
      lambda rs: (soma(rs, "util_ok") / soma(rs, "util_thrown"), soma(rs, "util_thrown"))
      if soma(rs, "util_thrown") > 0 else (None, 0), True),
-    ("Dano de utility por round", "Teamplay", 0.15,
+    ("Dano de utility por round", "Teamplay", 0.10,
      lambda rs: (soma(rs, "util_damage") / len(rs), len(rs)) if rs else (None, 0), False),
+    # os dois lados do trade (opcao C, 21/10):
+    #   Ser trocado ao morrer  quem morreu foi vingado em ate 3 s (forte, 0,78)
+    #   Taxa de troca          companheiro morreu a ate 1000 unidades e ele
+    #                          matou o assassino em ate 3 s; "outro vingou antes"
+    #                          nao conta. Hoje e ruido (0,05), entao quase nao
+    #                          pesa; o peso cresce sozinho quando a base crescer.
     ("Ser trocado ao morrer", "Teamplay", 0.15,
      lambda rs: (soma(rs, "deaths_traded") / soma(rs, "deaths"), soma(rs, "deaths"))
      if soma(rs, "deaths") > 0 else (None, 0), False),
-    ("Assistencias por round", "Teamplay", 0.20, _por_round("assists"), False),
+    ("Taxa de troca", "Teamplay", 0.15,
+     lambda rs: (soma(rs, "trade_feitas") / soma(rs, "trade_oport"), soma(rs, "trade_oport"))
+     if soma(rs, "trade_oport") > 0 else (None, 0), False),
+    ("Assistencias por round", "Teamplay", 0.15, _por_round("assists"), False),
 
     ("K/D", "Efficiency", 0.15,
      lambda rs: (soma(rs, "kills") / soma(rs, "deaths"), soma(rs, "deaths"))
@@ -166,6 +175,59 @@ METRICAS = [
     ("Entry kill de TR", "Entry", 0.15, _lado_t(_por_round("entry_kills")), False),
 
 ]
+
+
+# ---------------------------------------------------------------- pesos
+# Os pesos (dos pilares e de cada metrica dentro do pilar) ficam em
+# pesos/oficial.json. Para testar outra distribuicao sem mexer na oficial:
+#     py lcp_rating.py --pesos pesos/teste.json
+# Os valores acima no codigo sao so o padrao, se o arquivo nao existir.
+ARQ_PESOS_PADRAO = os.path.join("pesos", "oficial.json")
+ARQ_PESOS_USADOS = os.path.join(PASTA_BASE, "lcp_pesos_usados.json")
+
+
+def pesos_atuais():
+    met = {}
+    for nome, pilar, peso, fn, flash in METRICAS:
+        met.setdefault(pilar, {})[nome] = peso
+    return {"pilares": dict(PESOS_PILARES), "metricas": met}
+
+
+def aplicar_pesos(caminho):
+    """Troca os pesos pelos do arquivo. Recusa nome de pilar ou metrica que
+    nao existe e avisa se algum grupo nao soma 100%."""
+    import json
+    global METRICAS
+    with open(caminho, "r", encoding="utf-8") as h:
+        cfg = json.load(h)
+    pil = cfg.get("pilares", {})
+    met = cfg.get("metricas", {})
+    nomes = {(p, n) for n, p, _, _, _ in METRICAS}
+    for p in pil:
+        if p not in {x[0] for x in nomes}:
+            raise SystemExit("Pilar desconhecido em %s: %s" % (caminho, p))
+    for p, d in met.items():
+        for n in d:
+            if (p, n) not in nomes:
+                raise SystemExit("Metrica desconhecida em %s: %s / %s" % (caminho, p, n))
+    PESOS_PILARES.clear()
+    PESOS_PILARES.update({p: float(v) for p, v in pil.items() if float(v) > 0})
+    METRICAS = [(n, p, float(met.get(p, {}).get(n, 0.0)), fn, fl)
+                for n, p, w, fn, fl in METRICAS if p in PESOS_PILARES]
+    METRICAS = [m for m in METRICAS if m[2] > 0]
+    avisos = []
+    if abs(sum(PESOS_PILARES.values()) - 1) > 0.001:
+        avisos.append("pilares somam %.0f%%" % (100 * sum(PESOS_PILARES.values())))
+    for p in PESOS_PILARES:
+        t = sum(m[2] for m in METRICAS if m[1] == p)
+        if abs(t - 1) > 0.001:
+            avisos.append("%s soma %.0f%%" % (p, 100 * t))
+    for a in avisos:
+        print("AVISO de pesos: " + a)
+
+
+if os.path.exists(ARQ_PESOS_PADRAO):
+    aplicar_pesos(ARQ_PESOS_PADRAO)
 
 
 # ---------------------------------------------------------------- estatistica
@@ -217,6 +279,16 @@ def consistencia(rs_por_partida):
 
 
 def main():
+    if "--pesos" in sys.argv:
+        caminho = sys.argv[sys.argv.index("--pesos") + 1]
+        aplicar_pesos(caminho)
+        print("Pesos usados: " + caminho)
+    else:
+        print("Pesos usados: " + (ARQ_PESOS_PADRAO if os.path.exists(ARQ_PESOS_PADRAO) else "padrao do codigo"))
+    import json
+    os.makedirs(PASTA_BASE, exist_ok=True)
+    with open(ARQ_PESOS_USADOS, "w", encoding="utf-8") as h:
+        json.dump(pesos_atuais(), h, ensure_ascii=False, indent=2)
     if not os.path.exists(ARQ_RP):
         print("Nao encontrei " + ARQ_RP + ". Rode antes:  py lcp_base.py")
         sys.exit(1)
@@ -473,6 +545,7 @@ def main():
             ("%d/%d" % (cl_v, cl_n)) if cl_n else "-", adr, kd, len(rs), npart, poucas))
         saida.append({
             "posicao": i, "apelido": nome, "steamid": s, "LCP": round(lcp[s], 2),
+            "LCP_exato": round(lcp[s], 4),
             "funcao": funcao(s),
             "Impact": round(pnota(s, "Impact"), 2),
             "Teamplay": round(pnota(s, "Teamplay"), 2),
@@ -485,7 +558,7 @@ def main():
             "rounds": len(rs), "partidas": npart, "poucas_partidas": poucas,
         })
 
-    campos = ["posicao", "apelido", "steamid", "LCP", "funcao"] + list(PESOS_PILARES.keys()) + \
+    campos = ["posicao", "apelido", "steamid", "LCP", "LCP_exato", "funcao"] + list(PESOS_PILARES.keys()) + \
              ["Clutch_pct", "Clutch_vencidos", "Clutch_total", "Regularidade", "Baiter", "Baiter_rotulo", "ADR", "KPR", "KD", "rounds", "partidas",
               "poucas_partidas"]
     with open(ARQ_OUT, "w", encoding="utf-8", newline="") as h:

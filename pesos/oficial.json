@@ -1,0 +1,38 @@
+{
+  "pilares": {
+    "Impact": 0.4,
+    "Teamplay": 0.25,
+    "Efficiency": 0.1,
+    "Entry": 0.25
+  },
+  "metricas": {
+    "Impact": {
+      "ADR": 0.4,
+      "Kills por round": 0.25,
+      "Multi-kill": 0.2,
+      "Kills em desvantagem": 0.15
+    },
+    "Teamplay": {
+      "Contribuicao de utility": 0.1,
+      "Assistencias por round": 0.25,
+      "Inimigos cegados por round": 0.2,
+      "Utility bem-sucedida": 0.1,
+      "Dano de utility por round": 0.25,
+      "Taxa de troca": 0.1,
+      "Ser trocado ao morrer": 0.0
+    },
+    "Efficiency": {
+      "Headshot %": 0.15,
+      "Sobrevivencia": 0.2,
+      "KAST": 0.25,
+      "K/D": 0.3,
+      "Morrer primeiro (contra)": 0.1
+    },
+    "Entry": {
+      "First kills por round": 0.5,
+      "Aproveitamento de entry": 0.4,
+      "Volume de entry de TR": 0.05,
+      "Entry kill de TR": 0.05
+    }
+  }
+}

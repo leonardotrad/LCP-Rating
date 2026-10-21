@@ -111,6 +111,19 @@ Leitura: forte ≥ 0,70 · boa ≥ 0,50 · fraca ≥ 0,30 · ruim abaixo disso.
 PESOS_PILARES = {"Impact": 0.40, "Teamplay": 0.22, "Efficiency": 0.20, "Entry": 0.18}
 ```
 
+**Os pesos oficiais ficam em `pesos/oficial.json`** (fonte da verdade desde
+21/10; as tabelas abaixo podem estar defasadas). Para testar outra distribuição:
+`py lcp_rating.py --pesos pesos/teste.json` e `py lcp_painel_html.py --teste`
+(painel em `base/painel_teste/`). Depois rode `py lcp_rating.py` de novo para
+voltar ao oficial.
+
+Distribuição oficial de 21/10: Impact 40% (ADR 40, Kills/round 25, Multi-kill
+20, Kills em desvantagem 15) · Teamplay 25% (Dano de utility 25, Assistências
+25, Cegados 20, Contribuição de utility 10, Utility bem-sucedida 10, Taxa de
+troca 10, Ser trocado 0) · Efficiency 10% (K/D 30, KAST 25, Sobrevivência 20,
+Headshot 15, Morrer primeiro 10) · Entry 25% (First kills 50, Aproveitamento
+40, Volume de entry de TR 5, Entry kill de TR 5).
+
 Os pesos dos pilares e os pesos dentro de cada pilar são **escolha nossa**.
 Confiabilidades abaixo: base de 21/10, depois do pente fino.
 A confiabilidade só ajusta esses pesos para cima ou para baixo.

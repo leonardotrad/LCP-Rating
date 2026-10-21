@@ -96,7 +96,7 @@ def main():
         "posicao", "apelido", "steamid", "LCP",
         "ADR", "kills_por_round", "multi_kill_pct", "kills_desvantagem_pct",
         "utility_por_round", "cegados_por_round", "utility_ok_pct",
-        "dano_utility_por_round", "trocado_ao_morrer_pct", "assistencias_por_round",
+        "dano_utility_por_round", "trocado_ao_morrer_pct", "assistencias_por_round", "taxa_troca_pct_nota",
         "KD", "headshot_pct", "sobrevivencia_pct", "kast_pct", "morrer_primeiro_por_round",
         "first_kills_por_round", "entry_aproveitamento_pct", "entry_por_round", "entry_tr_por_round_tr",
         "entry_kill_tr_por_round",
@@ -135,6 +135,7 @@ def main():
             "dano_utility_por_round": div(soma(rs, "util_damage"), n, 1),
             "trocado_ao_morrer_pct": div(100 * soma(rs, "deaths_traded"), mortes, 1),
             "assistencias_por_round": div(soma(rs, "assists"), n),
+            "taxa_troca_pct_nota": div(100 * soma(rs, "trade_feitas"), soma(rs, "trade_oport"), 1),
             "kast_pct": div(100 * sum(1 for r in rs if f(r.get("kills")) > 0 or f(r.get("assists")) > 0
                                       or not bo(r.get("died")) or f(r.get("deaths_traded")) > 0), n, 1),
             "morrer_primeiro_por_round": div(soma(rs, "entry_deaths"), n),
